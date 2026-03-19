@@ -82,7 +82,7 @@ function initFirebase() {
                 let preseeded = false;
                 if (typeof PRESEED_CLOSING_LINES !== 'undefined') {
                     for (const [gid, line] of Object.entries(PRESEED_CLOSING_LINES)) {
-                        if (!state.closingLines[gid]) {
+                        if (!state.closingLines[gid] || state.closingLines[gid].spread !== line.spread) {
                             state.closingLines[gid] = line;
                             preseeded = true;
                         }
@@ -172,7 +172,7 @@ function loadStateLocal() {
 
 // Pre-seeded closing lines for games that were already live before caching was deployed
 const PRESEED_CLOSING_LINES = {
-    '401856479': { spread: -1.5,  spreadDetails: 'OSU -1.5' },   // TCU @ Ohio State
+    '401856479': { spread: -2.5,  spreadDetails: 'OSU -2.5' },   // TCU @ Ohio State
     '401856489': { spread: -20.5, spreadDetails: 'NEB -20.5' },   // Troy @ Nebraska
     '401856480': { spread: -12.5, spreadDetails: 'WIS -12.5' },   // High Point @ Wisconsin
     '401856482': { spread: -7.5,  spreadDetails: 'LOU -7.5' }     // South Florida @ Louisville
