@@ -90,6 +90,14 @@ function initFirebase() {
                     if (preseeded) saveState();
                 }
                 console.log('State synced from Firebase');
+                // Backfill cached closing lines into existing game objects
+                Object.values(state.games).forEach(g => {
+                    if ((g.spread === null || g.spread === undefined) && state.closingLines[g.id]) {
+                        g.spread = state.closingLines[g.id].spread;
+                        g.spreadDetails = state.closingLines[g.id].spreadDetails;
+                        g.lineLabel = 'locked';
+                    }
+                });
                 renderStandingsBar();
                 // Re-render current view if games are loaded
                 if (Object.keys(state.games).length > 0) {
@@ -466,10 +474,16 @@ function renderGameCard(game) {
         statusHtml = `<span class="game-status pre">${timeStr}</span>`;
     }
 
-    // Spread banner
+    // Spread banner — use game object spread, fall back to closingLines cache
+    let displaySpread = game.spread;
+    let displaySpreadDetails = game.spreadDetails;
+    if ((displaySpread === null || displaySpread === undefined) && state.closingLines[game.id]) {
+        displaySpread = state.closingLines[game.id].spread;
+        displaySpreadDetails = state.closingLines[game.id].spreadDetails;
+    }
     let spreadBanner = '';
-    if (game.spread !== null && game.spread !== undefined) {
-        const lineText = game.spreadDetails || formatSpread(game.spread, game.home.abbreviation);
+    if (displaySpread !== null && displaySpread !== undefined) {
+        const lineText = displaySpreadDetails || formatSpread(displaySpread, game.home.abbreviation);
         const lockIcon = (isLive || isFinal) ? ' \u{1F512}' : '';
         spreadBanner = `<div class="game-spread-banner">LINE: ${lineText}${lockIcon}</div>`;
     }
@@ -489,13 +503,13 @@ function renderGameCard(game) {
 
     // Spread result
     let spreadResultHtml = '';
-    if (result && game.spread !== null) {
+    if (result && displaySpread !== null) {
         if (result.push) {
             spreadResultHtml = `<div class="spread-result push">PUSH \u2014 No transfer</div>`;
         } else if (result.winnerCovered) {
-            spreadResultHtml = `<div class="spread-result covered">\u2713 ${result.winnerTeam.abbreviation || result.winnerTeam.shortName} COVERED (won by ${result.margin}, spread ${formatSpread(game.spread, game.home.abbreviation)})</div>`;
+            spreadResultHtml = `<div class="spread-result covered">\u2713 ${result.winnerTeam.abbreviation || result.winnerTeam.shortName} COVERED (won by ${result.margin}, spread ${formatSpread(displaySpread, game.home.abbreviation)})</div>`;
         } else {
-            spreadResultHtml = `<div class="spread-result not-covered">\u2717 ${result.winnerTeam.abbreviation || result.winnerTeam.shortName} DID NOT COVER (won by ${result.margin}, spread ${formatSpread(game.spread, game.home.abbreviation)})</div>`;
+            spreadResultHtml = `<div class="spread-result not-covered">\u2717 ${result.winnerTeam.abbreviation || result.winnerTeam.shortName} DID NOT COVER (won by ${result.margin}, spread ${formatSpread(displaySpread, game.home.abbreviation)})</div>`;
         }
     }
 
@@ -703,6 +717,15 @@ async function refreshCurrentRound() {
         const events = await fetchGamesForRound(state.currentRound);
         const closingLinesBefore = JSON.stringify(state.closingLines);
         const games = events.map(parseGame).filter(Boolean);
+
+        // Backfill spread from closing lines cache for games where ESPN removed odds
+        games.forEach(g => {
+            if ((g.spread === null || g.spread === undefined) && state.closingLines[g.id]) {
+                g.spread = state.closingLines[g.id].spread;
+                g.spreadDetails = state.closingLines[g.id].spreadDetails;
+                g.lineLabel = 'locked';
+            }
+        });
 
         games.forEach(g => { state.games[g.id] = g; });
 
