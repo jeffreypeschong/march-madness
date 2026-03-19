@@ -99,6 +99,7 @@ function initFirebase() {
                     }
                 });
                 renderStandingsBar();
+                renderLiveTicker();
                 // Re-render current view if games are loaded
                 if (Object.keys(state.games).length > 0) {
                     if (state.currentRound === 'standings') {
@@ -410,6 +411,78 @@ function getEliminatedTeamIds() {
 }
 
 // ---- UI Rendering ----
+function renderLiveTicker() {
+    const ticker = document.getElementById('liveTicker');
+    if (!ticker) return;
+
+    // Show live and recently-finished games
+    const activeGames = Object.values(state.games).filter(g =>
+        g.state === 'in' || g.state === 'post' || g.completed
+    );
+
+    if (activeGames.length === 0) {
+        ticker.innerHTML = '';
+        return;
+    }
+
+    // Sort: live first, then final by most recent
+    activeGames.sort((a, b) => {
+        const aLive = a.state === 'in' ? 0 : 1;
+        const bLive = b.state === 'in' ? 0 : 1;
+        if (aLive !== bLive) return aLive - bLive;
+        return new Date(b.date) - new Date(a.date);
+    });
+
+    ticker.innerHTML = activeGames.map(game => {
+        const isLive = game.state === 'in';
+        const isFinal = game.state === 'post' || game.completed;
+        const cardClass = isFinal ? 'final' : '';
+
+        const homeWins = game.home.score > game.away.score;
+        const awayWins = game.away.score > game.home.score;
+        const homeLoserClass = isFinal && awayWins ? 'loser' : '';
+        const awayLoserClass = isFinal && homeWins ? 'loser' : '';
+
+        let clockHtml = '';
+        if (isLive) {
+            const periodText = game.period ? (game.period === 1 ? '1st' : '2nd') : '';
+            const clockText = game.clock || '';
+            clockHtml = `<span class="ticker-clock">${clockText}</span><span>${periodText}</span>`;
+        } else if (isFinal) {
+            clockHtml = `<span class="ticker-clock">FINAL</span>`;
+        }
+
+        const broadcast = game.broadcast || '';
+
+        return `
+        <a href="#" class="ticker-game ${cardClass}" onclick="event.preventDefault();scrollToGame('${game.id}')">
+            <div class="ticker-status">
+                ${clockHtml}
+                <span>${broadcast}</span>
+            </div>
+            <div class="ticker-teams">
+                <div class="ticker-team ${awayLoserClass}">
+                    <span class="ticker-team-name"><span class="ticker-seed">${game.away.seed || ''}</span> ${game.away.abbreviation}</span>
+                    <span class="ticker-score">${game.away.score}</span>
+                </div>
+                <div class="ticker-team ${homeLoserClass}">
+                    <span class="ticker-team-name"><span class="ticker-seed">${game.home.seed || ''}</span> ${game.home.abbreviation}</span>
+                    <span class="ticker-score">${game.home.score}</span>
+                </div>
+            </div>
+        </a>`;
+    }).join('');
+}
+
+function scrollToGame(gameId) {
+    const card = document.querySelector(`.game-card[data-game-id="${gameId}"]`);
+    if (card) {
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        card.style.outline = '2px solid var(--accent)';
+        setTimeout(() => card.style.outline = '', 2000);
+    }
+}
+
 function renderStandingsBar() {
     const bar = document.getElementById('standingsBar');
     if (!bar) return;
@@ -776,6 +849,7 @@ async function refreshCurrentRound() {
 
         renderGames(games);
         renderStandingsBar();
+        renderLiveTicker();
     } catch (err) {
         console.error('Error refreshing:', err);
         if (container) container.innerHTML = `<div class="no-games"><h3>Error loading games</h3><p>${err.message}</p></div>`;
