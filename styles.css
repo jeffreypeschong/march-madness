@@ -494,6 +494,11 @@ main {
     opacity: 0.5;
 }
 
+.team-row.tbd {
+    opacity: 0.4;
+    font-style: italic;
+}
+
 .team-seed {
     width: 24px;
     height: 24px;

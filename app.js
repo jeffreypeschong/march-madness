@@ -541,6 +541,10 @@ function renderGames(games) {
     });
 }
 
+function isTBD(team) {
+    return !team || team.id < 0 || team.abbreviation === 'TBD';
+}
+
 function renderGameCard(game) {
     const result = game.completed ? analyzeSpread(game) : null;
 
@@ -549,8 +553,8 @@ function renderGameCard(game) {
     const awayTransfer = state.transfers.find(t => t.gameId === game.id && t.teamId === String(game.away.id));
     const homeController = homeTransfer ? homeTransfer.fromPlayer : state.teamControl[game.home.id];
     const awayController = awayTransfer ? awayTransfer.fromPlayer : state.teamControl[game.away.id];
-    const homePlayer = state.players.find(p => p.id === homeController);
-    const awayPlayer = state.players.find(p => p.id === awayController);
+    const homePlayer = isTBD(game.home) ? null : state.players.find(p => p.id === homeController);
+    const awayPlayer = isTBD(game.away) ? null : state.players.find(p => p.id === awayController);
 
     const isLive = game.state === 'in';
     const isFinal = game.state === 'post' || game.completed;
@@ -628,15 +632,15 @@ function renderGameCard(game) {
         </div>
         ${spreadBanner}
         <div class="game-teams">
-            <div class="team-row ${awayRowClass}">
-                <span class="team-seed">${game.away.seed || '-'}</span>
-                <span class="team-name">${game.away.shortName || game.away.name}${game.away.record ? ` <span class="team-record-inline">(${game.away.record})</span>` : ''}</span>
+            <div class="team-row ${awayRowClass}${isTBD(game.away) ? ' tbd' : ''}">
+                <span class="team-seed">${isTBD(game.away) ? '' : (game.away.seed || '-')}</span>
+                <span class="team-name">${isTBD(game.away) ? 'TBD' : (game.away.shortName || game.away.name) + (game.away.record ? ` <span class="team-record-inline">(${game.away.record})</span>` : '')}</span>
                 ${awayPlayerTag}
                 <span class="team-score">${(isLive || isFinal) ? game.away.score : ''}</span>
             </div>
-            <div class="team-row ${homeRowClass}">
-                <span class="team-seed">${game.home.seed || '-'}</span>
-                <span class="team-name">${game.home.shortName || game.home.name}${game.home.record ? ` <span class="team-record-inline">(${game.home.record})</span>` : ''}</span>
+            <div class="team-row ${homeRowClass}${isTBD(game.home) ? ' tbd' : ''}">
+                <span class="team-seed">${isTBD(game.home) ? '' : (game.home.seed || '-')}</span>
+                <span class="team-name">${isTBD(game.home) ? 'TBD' : (game.home.shortName || game.home.name) + (game.home.record ? ` <span class="team-record-inline">(${game.home.record})</span>` : '')}</span>
                 ${homePlayerTag}
                 <span class="team-score">${(isLive || isFinal) ? game.home.score : ''}</span>
             </div>
