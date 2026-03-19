@@ -34,6 +34,7 @@ let state = {
     originalDraft: {},
     transfers: [],
     overrides: {},
+    closingLines: {},
     games: {},
     currentRound: 64,
     teams: {}
@@ -74,6 +75,7 @@ function initFirebase() {
                 state.originalDraft = data.originalDraft || {};
                 state.transfers = data.transfers || [];
                 state.overrides = data.overrides || {};
+                state.closingLines = data.closingLines || {};
                 console.log('State synced from Firebase');
                 renderStandingsBar();
                 // Re-render current view if games are loaded
@@ -98,6 +100,7 @@ function initFirebase() {
                 state.teamControl = { ...DEFAULT_DRAFT };
                 state.transfers = [];
                 state.overrides = {};
+                state.closingLines = {};
                 saveState();
             }
         });
@@ -117,7 +120,8 @@ function saveState() {
             teamControl: state.teamControl,
             originalDraft: state.originalDraft,
             transfers: state.transfers,
-            overrides: state.overrides
+            overrides: state.overrides,
+            closingLines: state.closingLines
         }).catch(err => {
             console.error('Firebase save failed:', err);
             saveStateLocal();
@@ -133,7 +137,8 @@ function saveStateLocal() {
         teamControl: state.teamControl,
         originalDraft: state.originalDraft,
         transfers: state.transfers,
-        overrides: state.overrides
+        overrides: state.overrides,
+        closingLines: state.closingLines
     };
     localStorage.setItem('marchMadness2026', JSON.stringify(toSave));
 }
@@ -147,6 +152,7 @@ function loadStateLocal() {
         state.originalDraft = parsed.originalDraft || {};
         state.transfers = parsed.transfers || [];
         state.overrides = parsed.overrides || {};
+        state.closingLines = parsed.closingLines || {};
     }
 }
 
@@ -193,10 +199,28 @@ function parseGame(event) {
             const homeAbbr = home.team.abbreviation;
             spreadDetails = `${homeAbbr} ${spread > 0 ? '+' : ''}${spread}`;
             lineLabel = 'locked';
+            // Cache the closing line so it persists when ESPN removes it during live games
+            state.closingLines[event.id] = { spread, spreadDetails };
         } else {
-            spread = oddsData.spread;
-            spreadDetails = oddsData.details || '';
-            lineLabel = 'live';
+            // ESPN no longer returning closing line — use cached value if available
+            const cached = state.closingLines[event.id];
+            if (cached) {
+                spread = cached.spread;
+                spreadDetails = cached.spreadDetails;
+                lineLabel = 'locked';
+            } else {
+                spread = oddsData.spread;
+                spreadDetails = oddsData.details || '';
+                lineLabel = 'live';
+            }
+        }
+    } else {
+        // No odds at all from ESPN — check cache
+        const cached = state.closingLines[event.id];
+        if (cached) {
+            spread = cached.spread;
+            spreadDetails = cached.spreadDetails;
+            lineLabel = 'locked';
         }
     }
 
@@ -645,6 +669,7 @@ async function refreshCurrentRound() {
 
     try {
         const events = await fetchGamesForRound(state.currentRound);
+        const closingLinesBefore = JSON.stringify(state.closingLines);
         const games = events.map(parseGame).filter(Boolean);
 
         games.forEach(g => { state.games[g.id] = g; });
@@ -654,6 +679,11 @@ async function refreshCurrentRound() {
                 processGameResult(g);
             }
         });
+
+        // Persist any newly cached closing lines
+        if (JSON.stringify(state.closingLines) !== closingLinesBefore) {
+            saveState();
+        }
 
         renderGames(games);
         renderStandingsBar();
