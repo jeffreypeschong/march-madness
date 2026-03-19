@@ -1100,7 +1100,8 @@ function init() {
     // Round tabs
     document.querySelectorAll('.round-tab').forEach(tab => {
         tab.addEventListener('click', () => {
-            const round = tab.dataset.round === 'standings' ? 'standings' : parseInt(tab.dataset.round);
+            const r = tab.dataset.round;
+            const round = (r === 'standings' || r === 'bracket') ? r : parseInt(r);
             switchRound(round);
         });
     });
