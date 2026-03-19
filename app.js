@@ -392,14 +392,34 @@ function processGameResult(game) {
     return { analysis, transfer };
 }
 
+// ---- Elimination Tracking ----
+function getEliminatedTeamIds() {
+    const eliminated = new Set();
+    Object.values(state.games).forEach(g => {
+        if (g.completed || g.state === 'post') {
+            const homeScore = g.home.score;
+            const awayScore = g.away.score;
+            if (homeScore > awayScore) {
+                eliminated.add(String(g.away.id));
+            } else if (awayScore > homeScore) {
+                eliminated.add(String(g.home.id));
+            }
+        }
+    });
+    return eliminated;
+}
+
 // ---- UI Rendering ----
 function renderStandingsBar() {
     const bar = document.getElementById('standingsBar');
     if (!bar) return;
+    const eliminated = getEliminatedTeamIds();
     const counts = {};
     state.players.forEach(p => { counts[p.id] = 0; });
     Object.entries(state.teamControl).forEach(([teamId, playerId]) => {
-        if (counts[playerId] !== undefined) counts[playerId]++;
+        if (counts[playerId] !== undefined && !eliminated.has(String(teamId))) {
+            counts[playerId]++;
+        }
     });
 
     bar.innerHTML = state.players.map(p =>
@@ -622,18 +642,27 @@ function renderStandings() {
     const view = document.getElementById('standingsView');
     if (!view) return;
 
+    const eliminated = getEliminatedTeamIds();
+
     const playerStats = state.players.map(player => {
         const controlledTeams = Object.entries(state.teamControl)
             .filter(([_, pid]) => pid === player.id)
-            .map(([tid]) => state.teams[tid] || { id: tid, name: `Team ${tid}`, abbreviation: '??', seed: 0 });
+            .map(([tid]) => {
+                const team = state.teams[tid] || { id: tid, name: `Team ${tid}`, abbreviation: '??', seed: 0 };
+                return { ...team, eliminated: eliminated.has(String(tid)) };
+            });
 
+        // Sort: active teams first, then eliminated at the end
+        controlledTeams.sort((a, b) => (a.eliminated ? 1 : 0) - (b.eliminated ? 1 : 0));
+
+        const activeTeams = controlledTeams.filter(t => !t.eliminated);
         const transfersIn = state.transfers.filter(t => t.toPlayer === player.id);
         const transfersOut = state.transfers.filter(t => t.fromPlayer === player.id);
 
-        return { player, controlledTeams, transfersIn, transfersOut, totalControlled: controlledTeams.length };
+        return { player, controlledTeams, activeTeams, transfersIn, transfersOut, totalActive: activeTeams.length };
     });
 
-    playerStats.sort((a, b) => b.totalControlled - a.totalControlled);
+    playerStats.sort((a, b) => b.totalActive - a.totalActive);
 
     let html = `
     <table class="standings-table">
@@ -641,7 +670,7 @@ function renderStandings() {
             <tr>
                 <th>#</th>
                 <th>Player</th>
-                <th class="center">Teams Controlled</th>
+                <th class="center">Teams Alive</th>
                 <th class="center">Transfers In</th>
                 <th class="center">Transfers Out</th>
                 <th>Current Teams</th>
@@ -652,7 +681,12 @@ function renderStandings() {
     playerStats.forEach((ps, i) => {
         const teamChips = ps.controlledTeams.map(t => {
             const wasOriginal = state.originalDraft[t.id] === ps.player.id;
-            const chipClass = !wasOriginal ? 'transferred-in' : '';
+            let chipClass = '';
+            if (t.eliminated) {
+                chipClass = 'eliminated';
+            } else if (!wasOriginal) {
+                chipClass = 'transferred-in';
+            }
             return `<span class="standings-team-chip ${chipClass}">${t.seed ? `(${t.seed}) ` : ''}${t.abbreviation || t.name}</span>`;
         }).join('');
 
@@ -665,7 +699,7 @@ function renderStandings() {
                     ${ps.player.name}
                 </div>
             </td>
-            <td class="center" style="font-weight:800;font-size:1.2rem">${ps.totalControlled}</td>
+            <td class="center" style="font-weight:800;font-size:1.2rem">${ps.totalActive}</td>
             <td class="center" style="color:var(--green);font-weight:700">${ps.transfersIn.length}</td>
             <td class="center" style="color:var(--red);font-weight:700">${ps.transfersOut.length}</td>
             <td><div class="standings-teams-list">${teamChips || '<span style="color:var(--text-muted);font-size:0.8rem">None</span>'}</div></td>

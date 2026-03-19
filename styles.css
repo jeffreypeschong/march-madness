@@ -539,8 +539,10 @@ main {
 }
 
 .standings-team-chip.eliminated {
-    opacity: 0.4;
-    text-decoration: line-through;
+    border-color: var(--red);
+    background: var(--red-bg);
+    color: var(--red);
+    opacity: 0.7;
 }
 
 .standings-team-chip.transferred-in {
