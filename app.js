@@ -445,9 +445,14 @@ function renderLiveTicker() {
 
         let clockHtml = '';
         if (isLive) {
-            const periodText = game.period ? (game.period === 1 ? '1st' : '2nd') : '';
-            const clockText = game.clock || '';
-            clockHtml = `<span class="ticker-clock">${clockText}</span><span>${periodText}</span>`;
+            const isHalftime = game.statusDetail === 'Halftime';
+            if (isHalftime) {
+                clockHtml = `<span class="ticker-clock">HALF</span>`;
+            } else {
+                const periodText = game.period ? (game.period === 1 ? '1st' : '2nd') : '';
+                const clockText = game.clock || '';
+                clockHtml = `<span class="ticker-clock">${clockText}</span><span>${periodText}</span>`;
+            }
         } else if (isFinal) {
             clockHtml = `<span class="ticker-clock">FINAL</span>`;
         }
@@ -563,9 +568,16 @@ function renderGameCard(game) {
     // Status display
     let statusHtml = '';
     if (isLive) {
-        const periodText = game.period ? `${game.period === 1 ? '1st' : '2nd'} Half` : '';
-        const clockText = game.clock ? ` ${game.clock}` : '';
-        statusHtml = `<span class="game-status live">LIVE</span><span style="color:var(--text-secondary);font-size:0.75rem;font-weight:600;margin-left:0.75rem">${periodText}${clockText}</span>`;
+        const isHalftime = game.statusDetail === 'Halftime';
+        let periodClock = '';
+        if (isHalftime) {
+            periodClock = 'HALFTIME';
+        } else {
+            const periodText = game.period ? `${game.period === 1 ? '1st' : '2nd'} Half` : '';
+            const clockText = game.clock ? ` ${game.clock}` : '';
+            periodClock = `${periodText}${clockText}`;
+        }
+        statusHtml = `<span class="game-status live">LIVE</span><span style="color:var(--text-secondary);font-size:0.75rem;font-weight:600;margin-left:0.75rem">${periodClock}</span>`;
     } else if (isFinal) {
         statusHtml = `<span class="game-status final">FINAL</span>`;
     } else {
