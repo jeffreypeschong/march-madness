@@ -173,9 +173,9 @@ function loadStateLocal() {
 // Pre-seeded closing lines for games that were already live before caching was deployed
 const PRESEED_CLOSING_LINES = {
     '401856479': { spread: -2.5,  spreadDetails: 'OSU -2.5' },   // TCU @ Ohio State
-    '401856489': { spread: -20.5, spreadDetails: 'NEB -20.5' },   // Troy @ Nebraska
-    '401856480': { spread: -12.5, spreadDetails: 'WIS -12.5' },   // High Point @ Wisconsin
-    '401856482': { spread: -7.5,  spreadDetails: 'LOU -7.5' }     // South Florida @ Louisville
+    '401856489': { spread: -13.5, spreadDetails: 'NEB -13.5' },   // Troy @ Nebraska
+    '401856480': { spread: -10.5, spreadDetails: 'WIS -10.5' },   // High Point @ Wisconsin
+    '401856482': { spread: -3.5,  spreadDetails: 'LOU -3.5' }     // South Florida @ Louisville
 };
 
 // ---- ESPN API ----
