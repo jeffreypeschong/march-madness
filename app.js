@@ -902,8 +902,13 @@ function renderBktMatchup(game) {
     const showScore = isLive || isFinal;
     const statusClass = isLive ? 'bkt-live' : isFinal ? 'bkt-final' : '';
 
-    const awayPlayer = state.players.find(p => p.id === state.teamControl[game.away.id]);
-    const homePlayer = state.players.find(p => p.id === state.teamControl[game.home.id]);
+    // Show who controlled the team GOING INTO this game (not post-transfer)
+    const homeTransfer = state.transfers.find(t => t.gameId === game.id && t.teamId === String(game.home.id));
+    const awayTransfer = state.transfers.find(t => t.gameId === game.id && t.teamId === String(game.away.id));
+    const homeController = homeTransfer ? homeTransfer.fromPlayer : state.teamControl[game.home.id];
+    const awayController = awayTransfer ? awayTransfer.fromPlayer : state.teamControl[game.away.id];
+    const awayPlayer = state.players.find(p => p.id === awayController);
+    const homePlayer = state.players.find(p => p.id === homeController);
     const homeWins = isFinal && game.home.score > game.away.score;
     const awayWins = isFinal && game.away.score > game.home.score;
 
