@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>March Madness H2H Bracket Tracker</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1>🏀 MARCH MADNESS 2026</h1>
+            <p class="subtitle">Head-to-Head Spread Tracker</p>
+            <div class="header-controls">
+                <div class="auto-refresh">
+                    <label>
+                        <input type="checkbox" id="autoRefresh" checked>
+                        Auto-refresh (60s)
+                    </label>
+                    <button id="refreshNow" class="btn btn-sm">Refresh Now</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <nav class="round-nav">
+        <button class="round-tab active" data-round="64">Round of 64</button>
+        <button class="round-tab" data-round="32">Round of 32</button>
+        <button class="round-tab" data-round="16">Sweet 16</button>
+        <button class="round-tab" data-round="8">Elite 8</button>
+        <button class="round-tab" data-round="4">Final Four</button>
+        <button class="round-tab" data-round="2">Championship</button>
+        <button class="round-tab" data-round="standings">Standings</button>
+    </nav>
+
+    <main>
+        <div id="standingsBar" class="standings-bar"></div>
+        <div id="gamesContainer" class="games-container">
+            <div class="loading">Loading games from ESPN...</div>
+        </div>
+        <div id="standingsView" class="standings-view hidden"></div>
+    </main>
+
+    <!-- Game Detail Modal -->
+    <div id="gameDetailModal" class="modal hidden">
+        <div class="modal-content modal-sm">
+            <div class="modal-header">
+                <h2>Game Details</h2>
+                <button class="btn-close" onclick="document.getElementById('gameDetailModal').classList.add('hidden')">&times;</button>
+            </div>
+            <div id="gameDetailBody" class="modal-body"></div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="default-data.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
