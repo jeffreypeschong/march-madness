@@ -852,10 +852,8 @@ async function fetchAllRoundGames() {
                         game.spreadDetails = state.closingLines[game.id].spreadDetails;
                         game.lineLabel = 'locked';
                     }
-                    const gd = new Date(game.date).toISOString().slice(0,10).replace(/-/g,'');
-                    for (const [r, ds] of Object.entries(ROUND_DATES)) {
-                        if (ds.includes(gd)) { game.bracketRound = parseInt(r); break; }
-                    }
+                    // Use the round we're fetching, not UTC date (late ET games roll to next UTC day)
+                    game.bracketRound = round;
                     state.games[game.id] = game;
                     if (game.completed) processGameResult(game);
                 }
