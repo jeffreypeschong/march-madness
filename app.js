@@ -43,6 +43,7 @@ let state = {
 // ---- Firebase Integration ----
 let db = null;
 let firebaseReady = false;
+let firebaseInitialSyncDone = false;
 
 function initFirebase() {
     if (typeof firebase === 'undefined' || typeof firebaseConfig === 'undefined' || !firebaseConfig || firebaseConfig.apiKey === 'YOUR_API_KEY') {
@@ -69,13 +70,14 @@ function initFirebase() {
         // Listen for real-time updates
         db.ref('league').on('value', (snapshot) => {
             const data = snapshot.val();
-            if (data) {
+            if (data && data.originalDraft && Object.keys(data.originalDraft).length > 0) {
                 state.players = data.players || state.players;
                 state.teamControl = data.teamControl || {};
                 state.originalDraft = data.originalDraft || {};
                 state.transfers = data.transfers || [];
                 state.overrides = data.overrides || {};
                 state.closingLines = data.closingLines || {};
+                firebaseInitialSyncDone = true;
                 console.log('State synced from Firebase');
                 renderStandingsBar();
                 // Re-render current view if games are loaded
@@ -101,6 +103,7 @@ function initFirebase() {
                 state.transfers = [];
                 state.overrides = {};
                 state.closingLines = {};
+                firebaseInitialSyncDone = true;
                 saveState();
             }
         });
@@ -209,8 +212,18 @@ function parseGame(event) {
                 spreadDetails = cached.spreadDetails;
                 lineLabel = 'locked';
             } else {
-                spread = oddsData.spread;
-                spreadDetails = oddsData.details || '';
+                // Try other ESPN spread fields as fallback
+                const fallbackLine = oddsData.pointSpread?.home?.current?.line
+                    ?? oddsData.pointSpread?.home?.open?.line
+                    ?? oddsData.spread;
+                if (fallbackLine !== undefined && fallbackLine !== null) {
+                    spread = parseFloat(fallbackLine);
+                    const homeAbbr = home.team.abbreviation;
+                    spreadDetails = oddsData.details || `${homeAbbr} ${spread > 0 ? '+' : ''}${spread}`;
+                } else {
+                    spread = null;
+                    spreadDetails = oddsData.details || '';
+                }
                 lineLabel = 'live';
             }
         }
@@ -680,8 +693,8 @@ async function refreshCurrentRound() {
             }
         });
 
-        // Persist any newly cached closing lines
-        if (JSON.stringify(state.closingLines) !== closingLinesBefore) {
+        // Persist any newly cached closing lines (only after Firebase has loaded to avoid overwriting real data)
+        if (firebaseInitialSyncDone && JSON.stringify(state.closingLines) !== closingLinesBefore) {
             saveState();
         }
 
