@@ -222,6 +222,15 @@ main {
     border: 1px solid var(--border);
     font-size: 0.8rem;
     font-weight: 600;
+    text-decoration: none;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.player-chip:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--border-light);
 }
 
 .player-chip .dot {

@@ -339,11 +339,11 @@ function renderStandingsBar() {
     });
 
     bar.innerHTML = state.players.map(p =>
-        `<div class="player-chip">
+        `<a href="#" class="player-chip" data-player-id="${p.id}" onclick="event.preventDefault();switchRound('standings');setTimeout(()=>{const el=document.getElementById('player-row-${p.id}');if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.style.outline='2px solid ${p.color}';setTimeout(()=>el.style.outline='',2000);}},100);">
             <span class="dot" style="background:${p.color}"></span>
             <span>${p.name}</span>
             <span class="count">${counts[p.id] || 0} teams</span>
-        </div>`
+        </a>`
     ).join('');
 }
 
@@ -369,7 +369,8 @@ function renderGames(games) {
 
     let html = '';
     for (const [region, regionGames] of Object.entries(regionMap)) {
-        html += `<div class="region-header">${region}</div>`;
+        const cleanRegion = region.replace(/NCAA Men's Basketball Championship\s*-\s*/i, '');
+        html += `<div class="region-header">${cleanRegion}</div>`;
         regionGames.sort((a, b) => new Date(a.date) - new Date(b.date));
         regionGames.forEach(game => {
             html += renderGameCard(game);
@@ -586,7 +587,7 @@ function renderStandings() {
         }).join('');
 
         html += `
-        <tr>
+        <tr id="player-row-${ps.player.id}">
             <td style="font-weight:800;color:var(--text-muted)">${i + 1}</td>
             <td>
                 <div class="standings-player-name">
