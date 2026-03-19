@@ -415,9 +415,9 @@ function renderLiveTicker() {
     const ticker = document.getElementById('liveTicker');
     if (!ticker) return;
 
-    // Show live and recently-finished games
+    // Show only in-progress games
     const activeGames = Object.values(state.games).filter(g =>
-        g.state === 'in' || g.state === 'post' || g.completed
+        g.state === 'in'
     );
 
     if (activeGames.length === 0) {
