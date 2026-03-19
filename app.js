@@ -544,8 +544,11 @@ function renderGames(games) {
 function renderGameCard(game) {
     const result = game.completed ? analyzeSpread(game) : null;
 
-    const homeController = state.teamControl[game.home.id];
-    const awayController = state.teamControl[game.away.id];
+    // Show who controlled the team GOING INTO this game (not post-transfer)
+    const homeTransfer = state.transfers.find(t => t.gameId === game.id && t.teamId === String(game.home.id));
+    const awayTransfer = state.transfers.find(t => t.gameId === game.id && t.teamId === String(game.away.id));
+    const homeController = homeTransfer ? homeTransfer.fromPlayer : state.teamControl[game.home.id];
+    const awayController = awayTransfer ? awayTransfer.fromPlayer : state.teamControl[game.away.id];
     const homePlayer = state.players.find(p => p.id === homeController);
     const awayPlayer = state.players.find(p => p.id === awayController);
 
