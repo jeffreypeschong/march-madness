@@ -902,4 +902,85 @@ main {
     .team-assignments {
         grid-template-columns: 1fr;
     }
+
+    /* Mobile standings: hide table, show cards */
+    .standings-table thead {
+        display: none;
+    }
+
+    .standings-table,
+    .standings-table tbody,
+    .standings-table tr,
+    .standings-table td {
+        display: block;
+        width: 100%;
+    }
+
+    .standings-table tr {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .standings-table td {
+        border-bottom: none;
+        padding: 0.2rem 0;
+        font-size: 0.85rem;
+    }
+
+    .standings-table td:first-child {
+        display: none;
+    }
+
+    .standings-table td:nth-child(2) {
+        font-size: 1rem;
+        margin-bottom: 0.4rem;
+    }
+
+    .standings-table td:nth-child(3)::before {
+        content: 'Teams: ';
+        color: var(--text-muted);
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .standings-table td:nth-child(4)::before {
+        content: 'Transfers In: ';
+        color: var(--text-muted);
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .standings-table td:nth-child(5)::before {
+        content: 'Transfers Out: ';
+        color: var(--text-muted);
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .standings-table td:nth-child(3),
+    .standings-table td:nth-child(4),
+    .standings-table td:nth-child(5) {
+        display: inline-block;
+        width: auto;
+        margin-right: 1rem;
+        text-align: left;
+    }
+
+    .standings-table td:last-child {
+        margin-top: 0.4rem;
+        padding-top: 0.4rem;
+        border-top: 1px solid var(--border);
+    }
+
+    .standings-teams-list {
+        gap: 0.25rem;
+    }
+
+    .standings-team-chip {
+        font-size: 0.65rem;
+        padding: 0.15rem 0.4rem;
+    }
 }
