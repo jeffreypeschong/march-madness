@@ -802,15 +802,243 @@ function renderStandings() {
     view.innerHTML = html;
 }
 
+// ---- Bracket View ----
+const BRACKET_SEED_ORDER = [[1,16],[8,9],[5,12],[4,13],[6,11],[3,14],[7,10],[2,15]];
+
+// Maps any seed to its bracket slot within a round
+function getBracketSlot(seed, round) {
+    if (!seed) return 99;
+    const groups = {
+        64: [[1,16],[8,9],[5,12],[4,13],[6,11],[3,14],[7,10],[2,15]],
+        32: [[1,16,8,9],[5,12,4,13],[6,11,3,14],[7,10,2,15]],
+        16: [[1,16,8,9,5,12,4,13],[6,11,3,14,7,10,2,15]],
+        8:  [[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]]
+    };
+    const g = groups[round];
+    if (!g) return 99;
+    for (let i = 0; i < g.length; i++) {
+        if (g[i].includes(seed)) return i;
+    }
+    return 99;
+}
+
+function getRegionName(regionStr) {
+    const clean = (regionStr || '').replace(/NCAA Men's Basketball Championship\s*-\s*/i, '');
+    const m = clean.match(/^(.+?)\s*Region/i);
+    return m ? m[1].trim() : clean.split(' - ')[0].trim() || '';
+}
+
+async function fetchAllRoundGames() {
+    const today = new Date().toISOString().slice(0,10).replace(/-/g,'');
+    for (const round of [64, 32, 16, 8, 4, 2]) {
+        const dates = ROUND_DATES[round];
+        // Only fetch rounds that have started or are upcoming (within 2 days)
+        const earliest = dates[0];
+        if (parseInt(earliest) > parseInt(today) + 2) continue;
+        try {
+            const events = await fetchGamesForRound(round);
+            events.forEach(event => {
+                const game = parseGame(event);
+                if (game) {
+                    if ((game.spread === null || game.spread === undefined) && state.closingLines[game.id]) {
+                        game.spread = state.closingLines[game.id].spread;
+                        game.spreadDetails = state.closingLines[game.id].spreadDetails;
+                        game.lineLabel = 'locked';
+                    }
+                    const gd = new Date(game.date).toISOString().slice(0,10).replace(/-/g,'');
+                    for (const [r, ds] of Object.entries(ROUND_DATES)) {
+                        if (ds.includes(gd)) { game.bracketRound = parseInt(r); break; }
+                    }
+                    state.games[game.id] = game;
+                    if (game.completed) processGameResult(game);
+                }
+            });
+        } catch(e) { console.warn('Bracket fetch error:', e); }
+    }
+}
+
+function buildBracketData() {
+    const bracket = {};
+    Object.values(state.games).forEach(game => {
+        const region = getRegionName(game.region);
+        if (!region) return;
+        const round = game.bracketRound;
+        if (!round) return;
+        if (!bracket[region]) bracket[region] = {};
+        if (!bracket[region][round]) bracket[region][round] = [];
+        bracket[region][round].push(game);
+    });
+
+    // Sort games within each round by bracket position
+    Object.values(bracket).forEach(rd => {
+        [64, 32, 16, 8].forEach(r => {
+            if (rd[r]) {
+                rd[r].sort((a, b) => {
+                    const aSlot = Math.min(getBracketSlot(a.away.seed, r), getBracketSlot(a.home.seed, r));
+                    const bSlot = Math.min(getBracketSlot(b.away.seed, r), getBracketSlot(b.home.seed, r));
+                    return aSlot - bSlot;
+                });
+            }
+        });
+    });
+
+    return bracket;
+}
+
+function renderBktMatchup(game) {
+    if (!game) {
+        return `<div class="bkt-game bkt-tbd"><div class="bkt-team-row"><span class="bkt-name">TBD</span></div><div class="bkt-team-row"><span class="bkt-name">TBD</span></div></div>`;
+    }
+
+    const isLive = game.state === 'in';
+    const isFinal = game.state === 'post' || game.completed;
+    const showScore = isLive || isFinal;
+    const statusClass = isLive ? 'bkt-live' : isFinal ? 'bkt-final' : '';
+
+    const awayPlayer = state.players.find(p => p.id === state.teamControl[game.away.id]);
+    const homePlayer = state.players.find(p => p.id === state.teamControl[game.home.id]);
+    const homeWins = isFinal && game.home.score > game.away.score;
+    const awayWins = isFinal && game.away.score > game.home.score;
+
+    function teamRow(team, player, isWinner, isLoser) {
+        const cls = isWinner ? 'bkt-winner' : isLoser ? 'bkt-loser' : '';
+        return `<div class="bkt-team-row ${cls}">
+            <span class="bkt-seed">${team.seed || ''}</span>
+            <span class="bkt-name">${team.abbreviation}</span>
+            ${player ? `<span class="bkt-player" style="color:${player.color}">${player.name}</span>` : '<span class="bkt-player"></span>'}
+            ${showScore ? `<span class="bkt-score">${team.score}</span>` : ''}
+        </div>`;
+    }
+
+    return `<div class="bkt-game ${statusClass}" data-game-id="${game.id}" onclick="scrollToGameFromBracket('${game.id}')">
+        ${teamRow(game.away, awayPlayer, awayWins, homeWins)}
+        ${teamRow(game.home, homePlayer, homeWins, awayWins)}
+    </div>`;
+}
+
+function renderBktRound(games, expectedCount) {
+    let html = '<div class="bkt-round">';
+    for (let i = 0; i < expectedCount; i += 2) {
+        html += '<div class="bkt-pair">';
+        html += renderBktMatchup(games?.[i] || null);
+        html += renderBktMatchup(games?.[i + 1] || null);
+        html += '</div>';
+    }
+    // Handle odd counts (E8 has 1 game)
+    if (expectedCount === 1) {
+        html = '<div class="bkt-round"><div class="bkt-pair bkt-single">';
+        html += renderBktMatchup(games?.[0] || null);
+        html += '</div>';
+    }
+    html += '</div>';
+    return html;
+}
+
+function scrollToGameFromBracket(gameId) {
+    // Switch to the appropriate round tab and scroll to the game
+    const game = state.games[gameId];
+    if (!game || !game.bracketRound) return;
+    switchRound(game.bracketRound);
+    setTimeout(() => {
+        const card = document.querySelector(`.game-card[data-game-id="${gameId}"]`);
+        if (card) {
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            card.style.outline = '2px solid var(--accent)';
+            setTimeout(() => card.style.outline = '', 2000);
+        }
+    }, 500);
+}
+
+async function renderBracket() {
+    const view = document.getElementById('bracketView');
+    if (!view) return;
+
+    view.innerHTML = '<div class="loading">Loading full bracket from ESPN...</div>';
+
+    await fetchAllRoundGames();
+    const bracket = buildBracketData();
+    const regions = Object.keys(bracket);
+
+    if (regions.length === 0) {
+        view.innerHTML = '<div class="no-games"><h3>No bracket data available yet</h3></div>';
+        return;
+    }
+
+    // Layout: split regions into left/right halves
+    const leftRegions = regions.slice(0, 2);
+    const rightRegions = regions.slice(2, 4);
+
+    let html = '<div class="bracket-scroll"><div class="bracket-container">';
+
+    // Left half
+    html += '<div class="bracket-half bracket-left">';
+    leftRegions.forEach(region => {
+        const rd = bracket[region] || {};
+        html += `<div class="bracket-region">`;
+        html += `<div class="bracket-region-label">${region}</div>`;
+        html += '<div class="bracket-rounds">';
+        html += renderBktRound(rd[64], 8);
+        html += renderBktRound(rd[32], 4);
+        html += renderBktRound(rd[16], 2);
+        html += renderBktRound(rd[8], 1);
+        html += '</div></div>';
+    });
+    html += '</div>';
+
+    // Center - Final Four & Championship
+    html += '<div class="bracket-center">';
+    html += '<div class="bracket-center-label">Final Four</div>';
+    html += '<div class="bkt-round">';
+    html += '<div class="bkt-pair bkt-single">' + renderBktMatchup(null) + '</div>';
+    html += '</div>';
+    html += '<div class="bracket-center-label">Championship</div>';
+    html += '<div class="bkt-round">';
+    html += '<div class="bkt-pair bkt-single">' + renderBktMatchup(null) + '</div>';
+    html += '</div>';
+    html += '<div class="bracket-center-label">Final Four</div>';
+    html += '<div class="bkt-round">';
+    html += '<div class="bkt-pair bkt-single">' + renderBktMatchup(null) + '</div>';
+    html += '</div>';
+    html += '</div>';
+
+    // Right half (rounds in reverse order)
+    html += '<div class="bracket-half bracket-right">';
+    rightRegions.forEach(region => {
+        const rd = bracket[region] || {};
+        html += `<div class="bracket-region">`;
+        html += `<div class="bracket-region-label">${region}</div>`;
+        html += '<div class="bracket-rounds">';
+        html += renderBktRound(rd[8], 1);
+        html += renderBktRound(rd[16], 2);
+        html += renderBktRound(rd[32], 4);
+        html += renderBktRound(rd[64], 8);
+        html += '</div></div>';
+    });
+    html += '</div>';
+
+    html += '</div></div>';
+    view.innerHTML = html;
+}
+
 // ---- Navigation & Refresh ----
 async function refreshCurrentRound() {
     const container = document.getElementById('gamesContainer');
     const standingsView = document.getElementById('standingsView');
+    const bracketView = document.getElementById('bracketView');
 
     if (state.currentRound === 'standings') {
         if (container) container.classList.add('hidden');
+        if (bracketView) bracketView.classList.add('hidden');
         if (standingsView) standingsView.classList.remove('hidden');
         renderStandings();
+        return;
+    }
+
+    if (state.currentRound === 'bracket') {
+        if (container) container.classList.add('hidden');
+        if (standingsView) standingsView.classList.add('hidden');
+        if (bracketView) bracketView.classList.remove('hidden');
+        renderBracket();
         return;
     }
 
@@ -819,6 +1047,7 @@ async function refreshCurrentRound() {
         container.innerHTML = '<div class="loading">Loading games from ESPN...</div>';
     }
     if (standingsView) standingsView.classList.add('hidden');
+    if (bracketView) bracketView.classList.add('hidden');
 
     try {
         const events = await fetchGamesForRound(state.currentRound);

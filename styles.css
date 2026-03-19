@@ -969,6 +969,235 @@ main {
     color: var(--text-secondary);
 }
 
+/* ---- Bracket View ---- */
+.bracket-view {
+    width: 100%;
+}
+
+.bracket-scroll {
+    overflow-x: auto;
+    padding-bottom: 1rem;
+}
+
+.bracket-container {
+    display: flex;
+    align-items: stretch;
+    min-width: 1200px;
+    gap: 0;
+}
+
+.bracket-half {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: 2rem;
+}
+
+.bracket-region {
+    position: relative;
+}
+
+.bracket-region-label {
+    font-size: 0.85rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--accent);
+    padding: 0.25rem 0 0.5rem 0;
+    text-align: center;
+}
+
+.bracket-rounds {
+    display: flex;
+    align-items: stretch;
+}
+
+.bracket-right .bracket-rounds {
+    flex-direction: row;
+}
+
+.bracket-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 160px;
+    padding: 0 0.5rem;
+    gap: 0.5rem;
+}
+
+.bracket-center-label {
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    text-align: center;
+    margin-top: 1rem;
+}
+
+.bracket-center-label:first-child {
+    margin-top: 0;
+}
+
+/* Round column */
+.bkt-round {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    flex: 1;
+    min-width: 140px;
+    padding: 0 2px;
+}
+
+/* Pair of matchups that feed into next round */
+.bkt-pair {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    flex: 1;
+    gap: 4px;
+    position: relative;
+    padding: 2px 0;
+}
+
+/* Connector lines - left side */
+.bracket-left .bkt-round:not(:last-child) .bkt-pair:not(.bkt-single) {
+    margin-right: 4px;
+}
+
+.bracket-left .bkt-round:not(:last-child) .bkt-pair:not(.bkt-single)::after {
+    content: '';
+    position: absolute;
+    right: -4px;
+    top: 25%;
+    bottom: 25%;
+    width: 8px;
+    border-top: 2px solid var(--border-light);
+    border-right: 2px solid var(--border-light);
+    border-bottom: 2px solid var(--border-light);
+    border-radius: 0 4px 4px 0;
+}
+
+.bracket-left .bkt-round:not(:last-child) .bkt-pair:not(.bkt-single)::before {
+    content: '';
+    position: absolute;
+    right: -16px;
+    top: 50%;
+    width: 12px;
+    border-top: 2px solid var(--border-light);
+}
+
+/* Connector lines - right side */
+.bracket-right .bkt-round:not(:last-child) .bkt-pair:not(.bkt-single) {
+    margin-left: 4px;
+}
+
+.bracket-right .bkt-round:not(:last-child) .bkt-pair:not(.bkt-single)::after {
+    content: '';
+    position: absolute;
+    left: -4px;
+    top: 25%;
+    bottom: 25%;
+    width: 8px;
+    border-top: 2px solid var(--border-light);
+    border-left: 2px solid var(--border-light);
+    border-bottom: 2px solid var(--border-light);
+    border-radius: 4px 0 0 4px;
+}
+
+.bracket-right .bkt-round:not(:last-child) .bkt-pair:not(.bkt-single)::before {
+    content: '';
+    position: absolute;
+    left: -16px;
+    top: 50%;
+    width: 12px;
+    border-top: 2px solid var(--border-light);
+}
+
+/* Matchup card */
+.bkt-game {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+    min-width: 130px;
+}
+
+.bkt-game:hover {
+    border-color: var(--border-light);
+    background: var(--bg-card-hover);
+}
+
+.bkt-game.bkt-live {
+    border-color: var(--green);
+    box-shadow: 0 0 8px rgba(0, 200, 83, 0.2);
+}
+
+.bkt-game.bkt-final {
+    opacity: 0.85;
+}
+
+.bkt-game.bkt-tbd {
+    opacity: 0.4;
+    cursor: default;
+}
+
+/* Team row inside matchup */
+.bkt-team-row {
+    display: flex;
+    align-items: center;
+    padding: 3px 6px;
+    gap: 4px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    min-height: 22px;
+}
+
+.bkt-team-row + .bkt-team-row {
+    border-top: 1px solid var(--border);
+}
+
+.bkt-team-row.bkt-winner {
+    background: var(--green-bg);
+}
+
+.bkt-team-row.bkt-loser {
+    opacity: 0.45;
+}
+
+.bkt-seed {
+    width: 16px;
+    text-align: center;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.bkt-name {
+    font-weight: 700;
+    white-space: nowrap;
+    min-width: 36px;
+}
+
+.bkt-player {
+    flex: 1;
+    font-size: 0.6rem;
+    font-weight: 600;
+    text-align: right;
+    white-space: nowrap;
+    opacity: 0.85;
+}
+
+.bkt-score {
+    font-weight: 800;
+    min-width: 20px;
+    text-align: right;
+    font-size: 0.75rem;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     header {
