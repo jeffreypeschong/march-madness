@@ -27,6 +27,23 @@ const ROUND_DATES = {
     2:  ['20260407']
 };
 
+function getActiveRound() {
+    const today = new Date();
+    const todayStr = today.getFullYear().toString()
+        + String(today.getMonth() + 1).padStart(2, '0')
+        + String(today.getDate()).padStart(2, '0');
+    const rounds = [64, 32, 16, 8, 4, 2];
+    for (const round of rounds) {
+        if (ROUND_DATES[round].includes(todayStr)) return round;
+    }
+    let lastRound = 64;
+    for (const round of rounds) {
+        const lastDate = ROUND_DATES[round][ROUND_DATES[round].length - 1];
+        if (lastDate <= todayStr) lastRound = round;
+    }
+    return lastRound;
+}
+
 // ---- State ----
 let state = {
     players: Array.from({length: NUM_PLAYERS}, (_, i) => ({ id: i, name: `Player ${i + 1}`, color: PLAYER_COLORS[i] })),
@@ -1171,9 +1188,9 @@ function init() {
         saveState();
     }
 
-    // Initial render
+    // Initial render — auto-navigate to the active round
     renderStandingsBar();
-    refreshCurrentRound();
+    switchRound(getActiveRound());
     if (autoRefreshCheckbox?.checked) startAutoRefresh();
 }
 
