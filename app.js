@@ -1124,6 +1124,20 @@ async function refreshCurrentRound() {
     }
 }
 
+async function populateAllTeams() {
+    const rounds = [64, 32, 16, 8, 4, 2];
+    for (const round of rounds) {
+        if (round === state.currentRound) continue;
+        try {
+            const events = await fetchGamesForRound(round);
+            events.forEach(ev => {
+                const game = parseGame(ev);
+                if (game) state.games[game.id] = game;
+            });
+        } catch (e) { /* ignore fetch errors for background population */ }
+    }
+}
+
 function switchRound(round) {
     state.currentRound = round;
     document.querySelectorAll('.round-tab').forEach(tab => {
@@ -1191,6 +1205,7 @@ function init() {
     // Initial render — auto-navigate to the active round
     renderStandingsBar();
     switchRound(getActiveRound());
+    populateAllTeams(); // background-fetch all rounds to fill state.teams
     if (autoRefreshCheckbox?.checked) startAutoRefresh();
 }
 
