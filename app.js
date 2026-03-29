@@ -1132,10 +1132,16 @@ async function populateAllTeams() {
             const events = await fetchGamesForRound(round);
             events.forEach(ev => {
                 const game = parseGame(ev);
-                if (game) state.games[game.id] = game;
+                if (game) {
+                    state.games[game.id] = game;
+                    if (game.completed) processGameResult(game);
+                }
             });
         } catch (e) { /* ignore fetch errors for background population */ }
     }
+    // Re-render standings bar & standings view now that all teams/results are loaded
+    renderStandingsBar();
+    if (state.currentRound === 'standings') renderStandings();
 }
 
 function switchRound(round) {
