@@ -1126,8 +1126,9 @@ async function refreshCurrentRound() {
 
 async function populateAllTeams() {
     const rounds = [64, 32, 16, 8, 4, 2];
-    for (const round of rounds) {
-        if (round === state.currentRound) continue;
+    // Fetch all non-active rounds in parallel for speed
+    await Promise.all(rounds.map(async round => {
+        if (round === state.currentRound) return;
         try {
             const events = await fetchGamesForRound(round);
             events.forEach(ev => {
@@ -1137,8 +1138,8 @@ async function populateAllTeams() {
                     if (game.completed) processGameResult(game);
                 }
             });
-        } catch (e) { /* ignore fetch errors for background population */ }
-    }
+        } catch (e) { /* ignore fetch errors */ }
+    }));
     // Re-render standings bar & standings view now that all teams/results are loaded
     renderStandingsBar();
     if (state.currentRound === 'standings') renderStandings();
