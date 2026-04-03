@@ -204,6 +204,30 @@ const PRESEED_CLOSING_LINES = {
     '401856482': { spread: -3.5,  spreadDetails: 'LOU -3.5' }     // South Florida @ Louisville
 };
 
+// Pre-seeded Final Four / Championship games (used until ESPN publishes them)
+const PRESEED_BRACKET_GAMES = [
+    {
+        id: 'ff-east-west', bracketRound: 4, date: '2026-04-05T22:00Z',
+        name: 'UConn Huskies vs Arizona Wildcats', shortName: 'CONN vs ARIZ',
+        state: 'pre', completed: false, statusDetail: '', clock: null, period: 0,
+        broadcast: 'TBS', venue: 'Alamodome, San Antonio, TX',
+        region: 'Final Four',
+        home: { id: '12', name: 'Arizona Wildcats', abbreviation: 'ARIZ', shortName: 'Arizona', seed: 1, score: 0 },
+        away: { id: '41', name: 'UConn Huskies', abbreviation: 'CONN', shortName: 'UConn', seed: 2, score: 0 },
+        spread: null, spreadDetails: '', lineLabel: 'LINE'
+    },
+    {
+        id: 'ff-south-midwest', bracketRound: 4, date: '2026-04-05T19:00Z',
+        name: 'Illinois Fighting Illini vs Michigan Wolverines', shortName: 'ILL vs MICH',
+        state: 'pre', completed: false, statusDetail: '', clock: null, period: 0,
+        broadcast: 'CBS', venue: 'Alamodome, San Antonio, TX',
+        region: 'Final Four',
+        home: { id: '130', name: 'Michigan Wolverines', abbreviation: 'MICH', shortName: 'Michigan', seed: 1, score: 0 },
+        away: { id: '356', name: 'Illinois Fighting Illini', abbreviation: 'ILL', shortName: 'Illinois', seed: 3, score: 0 },
+        spread: null, spreadDetails: '', lineLabel: 'LINE'
+    }
+];
+
 // ---- ESPN API ----
 async function fetchGamesForRound(round) {
     const dates = ROUND_DATES[round];
@@ -888,6 +912,20 @@ async function fetchAllRoundGames() {
                 }
             });
         } catch(e) { console.warn('Bracket fetch error:', e); }
+    }
+
+    // Inject preseed Final Four/Championship games if ESPN hasn't published them yet
+    const hasFF = Object.values(state.games).some(g => g.bracketRound === 4 && !String(g.id).startsWith('ff-'));
+    if (!hasFF) {
+        PRESEED_BRACKET_GAMES.filter(g => g.bracketRound === 4).forEach(g => {
+            if (!state.games[g.id]) state.games[g.id] = { ...g };
+        });
+    }
+    const hasChamp = Object.values(state.games).some(g => g.bracketRound === 2 && !String(g.id).startsWith('champ-'));
+    if (!hasChamp) {
+        PRESEED_BRACKET_GAMES.filter(g => g.bracketRound === 2).forEach(g => {
+            if (!state.games[g.id]) state.games[g.id] = { ...g };
+        });
     }
 }
 
