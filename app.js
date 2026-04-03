@@ -204,30 +204,6 @@ const PRESEED_CLOSING_LINES = {
     '401856482': { spread: -3.5,  spreadDetails: 'LOU -3.5' }     // South Florida @ Louisville
 };
 
-// Pre-seeded Final Four / Championship games (used until ESPN publishes them)
-// Bracket regions: East vs South, West vs Midwest
-const PRESEED_BRACKET_GAMES = [
-    {
-        id: 'ff-west-midwest', bracketRound: 4, date: '2026-04-05T22:00Z',
-        name: 'Michigan Wolverines vs Arizona Wildcats', shortName: 'MICH vs ARIZ',
-        state: 'pre', completed: false, statusDetail: '', clock: null, period: 0,
-        broadcast: 'TBS', venue: 'Alamodome, San Antonio, TX',
-        region: 'Final Four',
-        home: { id: 12, name: 'Arizona Wildcats', abbreviation: 'ARIZ', shortName: 'Arizona', seed: 1, score: 0 },
-        away: { id: 130, name: 'Michigan Wolverines', abbreviation: 'MICH', shortName: 'Michigan', seed: 1, score: 0 },
-        spread: null, spreadDetails: '', lineLabel: 'LINE'
-    },
-    {
-        id: 'ff-south-east', bracketRound: 4, date: '2026-04-05T19:00Z',
-        name: 'Illinois Fighting Illini vs UConn Huskies', shortName: 'ILL vs CONN',
-        state: 'pre', completed: false, statusDetail: '', clock: null, period: 0,
-        broadcast: 'CBS', venue: 'Alamodome, San Antonio, TX',
-        region: 'Final Four',
-        home: { id: 41, name: 'UConn Huskies', abbreviation: 'CONN', shortName: 'UConn', seed: 2, score: 0 },
-        away: { id: 356, name: 'Illinois Fighting Illini', abbreviation: 'ILL', shortName: 'Illinois', seed: 3, score: 0 },
-        spread: null, spreadDetails: '', lineLabel: 'LINE'
-    }
-];
 
 // ---- ESPN API ----
 async function fetchGamesForRound(round) {
@@ -916,20 +892,6 @@ async function fetchAllRoundGames() {
             });
         } catch(e) { console.warn('Bracket fetch error:', e); }
     }
-
-    // Inject preseed Final Four/Championship games if ESPN hasn't published them yet
-    const hasFF = Object.values(state.games).some(g => g.bracketRound === 4 && !String(g.id).startsWith('ff-'));
-    if (!hasFF) {
-        PRESEED_BRACKET_GAMES.filter(g => g.bracketRound === 4).forEach(g => {
-            if (!state.games[g.id]) state.games[g.id] = { ...g };
-        });
-    }
-    const hasChamp = Object.values(state.games).some(g => g.bracketRound === 2 && !String(g.id).startsWith('champ-'));
-    if (!hasChamp) {
-        PRESEED_BRACKET_GAMES.filter(g => g.bracketRound === 2).forEach(g => {
-            if (!state.games[g.id]) state.games[g.id] = { ...g };
-        });
-    }
 }
 
 function buildBracketData() {
@@ -1165,13 +1127,6 @@ async function refreshCurrentRound() {
         const events = await fetchGamesForRound(state.currentRound);
         const closingLinesBefore = JSON.stringify(state.closingLines);
         const games = events.map(parseGame).filter(Boolean);
-
-        // Inject preseed games if ESPN hasn't published them yet
-        if (games.length === 0 && (state.currentRound === 4 || state.currentRound === 2)) {
-            PRESEED_BRACKET_GAMES
-                .filter(g => g.bracketRound === state.currentRound)
-                .forEach(g => games.push({ ...g }));
-        }
 
         // Backfill spread from closing lines cache for games where ESPN removed odds
         games.forEach(g => {
