@@ -213,8 +213,8 @@ const PRESEED_BRACKET_GAMES = [
         state: 'pre', completed: false, statusDetail: '', clock: null, period: 0,
         broadcast: 'TBS', venue: 'Alamodome, San Antonio, TX',
         region: 'Final Four',
-        home: { id: '12', name: 'Arizona Wildcats', abbreviation: 'ARIZ', shortName: 'Arizona', seed: 1, score: 0 },
-        away: { id: '130', name: 'Michigan Wolverines', abbreviation: 'MICH', shortName: 'Michigan', seed: 1, score: 0 },
+        home: { id: 12, name: 'Arizona Wildcats', abbreviation: 'ARIZ', shortName: 'Arizona', seed: 1, score: 0 },
+        away: { id: 130, name: 'Michigan Wolverines', abbreviation: 'MICH', shortName: 'Michigan', seed: 1, score: 0 },
         spread: null, spreadDetails: '', lineLabel: 'LINE'
     },
     {
@@ -223,8 +223,8 @@ const PRESEED_BRACKET_GAMES = [
         state: 'pre', completed: false, statusDetail: '', clock: null, period: 0,
         broadcast: 'CBS', venue: 'Alamodome, San Antonio, TX',
         region: 'Final Four',
-        home: { id: '41', name: 'UConn Huskies', abbreviation: 'CONN', shortName: 'UConn', seed: 2, score: 0 },
-        away: { id: '356', name: 'Illinois Fighting Illini', abbreviation: 'ILL', shortName: 'Illinois', seed: 3, score: 0 },
+        home: { id: 41, name: 'UConn Huskies', abbreviation: 'CONN', shortName: 'UConn', seed: 2, score: 0 },
+        away: { id: 356, name: 'Illinois Fighting Illini', abbreviation: 'ILL', shortName: 'Illinois', seed: 3, score: 0 },
         spread: null, spreadDetails: '', lineLabel: 'LINE'
     }
 ];
@@ -1057,19 +1057,19 @@ async function renderBracket() {
     const ffGames = Object.values(state.games).filter(g => g.bracketRound === 4);
     const champGame = Object.values(state.games).find(g => g.bracketRound === 2) || null;
 
-    // Match FF games to left/right bracket halves
+    // Match FF games to left/right bracket halves (coerce IDs to strings for safe comparison)
     let leftFF = null, rightFF = null;
     const leftTeamIds = new Set();
     leftRegions.forEach(region => {
         [64, 32, 16, 8].forEach(r => {
             (bracket[region]?.[r] || []).forEach(g => {
-                leftTeamIds.add(g.home.id);
-                leftTeamIds.add(g.away.id);
+                leftTeamIds.add(String(g.home.id));
+                leftTeamIds.add(String(g.away.id));
             });
         });
     });
     ffGames.forEach(g => {
-        if (leftTeamIds.has(g.home.id) || leftTeamIds.has(g.away.id)) {
+        if (leftTeamIds.has(String(g.home.id)) || leftTeamIds.has(String(g.away.id))) {
             leftFF = g;
         } else {
             rightFF = g;
