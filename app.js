@@ -868,9 +868,9 @@ async function fetchAllRoundGames() {
     const today = new Date().toISOString().slice(0,10).replace(/-/g,'');
     for (const round of [64, 32, 16, 8, 4, 2]) {
         const dates = ROUND_DATES[round];
-        // Only fetch rounds that have started or are upcoming (within 2 days)
+        // Only fetch rounds that have started or are upcoming (within 7 days)
         const earliest = dates[0];
-        if (parseInt(earliest) > parseInt(today) + 2) continue;
+        if (parseInt(earliest) > parseInt(today) + 7) continue;
         try {
             const events = await fetchGamesForRound(round);
             events.forEach(event => {
@@ -1007,6 +1007,29 @@ async function renderBracket() {
     const leftRegions = regions.slice(0, 2);
     const rightRegions = regions.slice(2, 4);
 
+    // Collect Final Four & Championship games
+    const ffGames = Object.values(state.games).filter(g => g.bracketRound === 4);
+    const champGame = Object.values(state.games).find(g => g.bracketRound === 2) || null;
+
+    // Match FF games to left/right bracket halves
+    let leftFF = null, rightFF = null;
+    const leftTeamIds = new Set();
+    leftRegions.forEach(region => {
+        [64, 32, 16, 8].forEach(r => {
+            (bracket[region]?.[r] || []).forEach(g => {
+                leftTeamIds.add(g.home.id);
+                leftTeamIds.add(g.away.id);
+            });
+        });
+    });
+    ffGames.forEach(g => {
+        if (leftTeamIds.has(g.home.id) || leftTeamIds.has(g.away.id)) {
+            leftFF = g;
+        } else {
+            rightFF = g;
+        }
+    });
+
     let html = '<div class="bracket-scroll"><div class="bracket-container">';
 
     // Left half
@@ -1028,15 +1051,15 @@ async function renderBracket() {
     html += '<div class="bracket-center">';
     html += '<div class="bracket-center-label">Final Four</div>';
     html += '<div class="bkt-round">';
-    html += '<div class="bkt-pair bkt-single">' + renderBktMatchup(null) + '</div>';
+    html += '<div class="bkt-pair bkt-single">' + renderBktMatchup(leftFF) + '</div>';
     html += '</div>';
     html += '<div class="bracket-center-label">Championship</div>';
     html += '<div class="bkt-round">';
-    html += '<div class="bkt-pair bkt-single">' + renderBktMatchup(null) + '</div>';
+    html += '<div class="bkt-pair bkt-single">' + renderBktMatchup(champGame) + '</div>';
     html += '</div>';
     html += '<div class="bracket-center-label">Final Four</div>';
     html += '<div class="bkt-round">';
-    html += '<div class="bkt-pair bkt-single">' + renderBktMatchup(null) + '</div>';
+    html += '<div class="bkt-pair bkt-single">' + renderBktMatchup(rightFF) + '</div>';
     html += '</div>';
     html += '</div>';
 
