@@ -205,24 +205,25 @@ const PRESEED_CLOSING_LINES = {
 };
 
 // Pre-seeded Final Four / Championship games (used until ESPN publishes them)
+// Bracket regions: East vs South, West vs Midwest
 const PRESEED_BRACKET_GAMES = [
     {
-        id: 'ff-east-west', bracketRound: 4, date: '2026-04-05T22:00Z',
-        name: 'UConn Huskies vs Arizona Wildcats', shortName: 'CONN vs ARIZ',
+        id: 'ff-west-midwest', bracketRound: 4, date: '2026-04-05T22:00Z',
+        name: 'Michigan Wolverines vs Arizona Wildcats', shortName: 'MICH vs ARIZ',
         state: 'pre', completed: false, statusDetail: '', clock: null, period: 0,
         broadcast: 'TBS', venue: 'Alamodome, San Antonio, TX',
         region: 'Final Four',
         home: { id: '12', name: 'Arizona Wildcats', abbreviation: 'ARIZ', shortName: 'Arizona', seed: 1, score: 0 },
-        away: { id: '41', name: 'UConn Huskies', abbreviation: 'CONN', shortName: 'UConn', seed: 2, score: 0 },
+        away: { id: '130', name: 'Michigan Wolverines', abbreviation: 'MICH', shortName: 'Michigan', seed: 1, score: 0 },
         spread: null, spreadDetails: '', lineLabel: 'LINE'
     },
     {
-        id: 'ff-south-midwest', bracketRound: 4, date: '2026-04-05T19:00Z',
-        name: 'Illinois Fighting Illini vs Michigan Wolverines', shortName: 'ILL vs MICH',
+        id: 'ff-south-east', bracketRound: 4, date: '2026-04-05T19:00Z',
+        name: 'Illinois Fighting Illini vs UConn Huskies', shortName: 'ILL vs CONN',
         state: 'pre', completed: false, statusDetail: '', clock: null, period: 0,
         broadcast: 'CBS', venue: 'Alamodome, San Antonio, TX',
         region: 'Final Four',
-        home: { id: '130', name: 'Michigan Wolverines', abbreviation: 'MICH', shortName: 'Michigan', seed: 1, score: 0 },
+        home: { id: '41', name: 'UConn Huskies', abbreviation: 'CONN', shortName: 'UConn', seed: 2, score: 0 },
         away: { id: '356', name: 'Illinois Fighting Illini', abbreviation: 'ILL', shortName: 'Illinois', seed: 3, score: 0 },
         spread: null, spreadDetails: '', lineLabel: 'LINE'
     }
@@ -1041,9 +1042,16 @@ async function renderBracket() {
         return;
     }
 
-    // Layout: split regions into left/right halves
-    const leftRegions = regions.slice(0, 2);
-    const rightRegions = regions.slice(2, 4);
+    // Layout: enforce correct bracket region order
+    // Top-left: East, Bottom-left: South, Top-right: West, Bottom-right: Midwest
+    const REGION_ORDER = ['East', 'South', 'West', 'Midwest'];
+    regions.sort((a, b) => {
+        const ai = REGION_ORDER.indexOf(a);
+        const bi = REGION_ORDER.indexOf(b);
+        return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+    });
+    const leftRegions = [regions[0], regions[1]];   // East, South
+    const rightRegions = [regions[2], regions[3]];   // West, Midwest
 
     // Collect Final Four & Championship games
     const ffGames = Object.values(state.games).filter(g => g.bracketRound === 4);
