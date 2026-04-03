@@ -33,15 +33,17 @@ function getActiveRound() {
         + String(today.getMonth() + 1).padStart(2, '0')
         + String(today.getDate()).padStart(2, '0');
     const rounds = [64, 32, 16, 8, 4, 2];
+    // If today is a game day, show that round
     for (const round of rounds) {
         if (ROUND_DATES[round].includes(todayStr)) return round;
     }
-    let lastRound = 64;
+    // Between rounds: show the next upcoming round (not the last completed one)
     for (const round of rounds) {
-        const lastDate = ROUND_DATES[round][ROUND_DATES[round].length - 1];
-        if (lastDate <= todayStr) lastRound = round;
+        const firstDate = ROUND_DATES[round][0];
+        if (firstDate > todayStr) return round;
     }
-    return lastRound;
+    // All rounds complete — show Championship
+    return 2;
 }
 
 // ---- State ----
