@@ -596,10 +596,12 @@ function renderGameCard(game) {
     const result = game.completed ? analyzeSpread(game) : null;
 
     // Show who controlled the team GOING INTO this game (not post-transfer)
-    const homeTransfer = state.transfers.find(t => t.gameId === game.id && t.teamId === String(game.home.id));
-    const awayTransfer = state.transfers.find(t => t.gameId === game.id && t.teamId === String(game.away.id));
-    const homeController = homeTransfer ? homeTransfer.fromPlayer : state.teamControl[game.home.id];
-    const awayController = awayTransfer ? awayTransfer.fromPlayer : state.teamControl[game.away.id];
+    const homeId = String(game.home.id);
+    const awayId = String(game.away.id);
+    const homeTransfer = state.transfers.find(t => t.gameId === game.id && t.teamId === homeId);
+    const awayTransfer = state.transfers.find(t => t.gameId === game.id && t.teamId === awayId);
+    const homeController = homeTransfer ? homeTransfer.fromPlayer : state.teamControl[homeId];
+    const awayController = awayTransfer ? awayTransfer.fromPlayer : state.teamControl[awayId];
     const homePlayer = isTBD(game.home) ? null : state.players.find(p => p.id === homeController);
     const awayPlayer = isTBD(game.away) ? null : state.players.find(p => p.id === awayController);
 
@@ -969,10 +971,12 @@ function renderBktMatchup(game) {
     const statusClass = isLive ? 'bkt-live' : isFinal ? 'bkt-final' : '';
 
     // Show who controlled the team GOING INTO this game (not post-transfer)
-    const homeTransfer = state.transfers.find(t => t.gameId === game.id && t.teamId === String(game.home.id));
-    const awayTransfer = state.transfers.find(t => t.gameId === game.id && t.teamId === String(game.away.id));
-    const homeController = homeTransfer ? homeTransfer.fromPlayer : state.teamControl[game.home.id];
-    const awayController = awayTransfer ? awayTransfer.fromPlayer : state.teamControl[game.away.id];
+    const homeId = String(game.home.id);
+    const awayId = String(game.away.id);
+    const homeTransfer = state.transfers.find(t => t.gameId === game.id && t.teamId === homeId);
+    const awayTransfer = state.transfers.find(t => t.gameId === game.id && t.teamId === awayId);
+    const homeController = homeTransfer ? homeTransfer.fromPlayer : state.teamControl[homeId];
+    const awayController = awayTransfer ? awayTransfer.fromPlayer : state.teamControl[awayId];
     const awayPlayer = state.players.find(p => p.id === awayController);
     const homePlayer = state.players.find(p => p.id === homeController);
     const homeWins = isFinal && game.home.score > game.away.score;
@@ -1161,6 +1165,13 @@ async function refreshCurrentRound() {
         const events = await fetchGamesForRound(state.currentRound);
         const closingLinesBefore = JSON.stringify(state.closingLines);
         const games = events.map(parseGame).filter(Boolean);
+
+        // Inject preseed games if ESPN hasn't published them yet
+        if (games.length === 0 && (state.currentRound === 4 || state.currentRound === 2)) {
+            PRESEED_BRACKET_GAMES
+                .filter(g => g.bracketRound === state.currentRound)
+                .forEach(g => games.push({ ...g }));
+        }
 
         // Backfill spread from closing lines cache for games where ESPN removed odds
         games.forEach(g => {
